@@ -1,0 +1,291 @@
+-- 02_tables.sql
+-- Création des tables avec leurs contraintes
+
+-- Table ANNEE_SCOLAIRE
+CREATE TABLE public.annee_scolaire (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom TEXT NOT NULL,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    CONSTRAINT valid_dates CHECK (date_debut < date_fin)
+);
+
+-- Table USERS
+CREATE TABLE public.users (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL UNIQUE,
+    telephone TEXT UNIQUE CHECK (telephone ~ '^\+?[0-9]{10,15}$'),
+    prenom TEXT NOT NULL,
+    nom TEXT NOT NULL,
+    role TEXT, -- Optionnel, sans contrainte CHECK
+    photo_url TEXT,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    updated_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table PARAMETRE_ECOLE
+CREATE TABLE public.parametre_ecole (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    annee_scolaire_id uuid NOT NULL REFERENCES public.annee_scolaire(id) ON DELETE CASCADE,
+    nom TEXT NOT NULL,
+    valeur TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    updated_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table SALLE
+CREATE TABLE public.salle (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom TEXT NOT NULL,
+    capacite INTEGER NOT NULL CHECK (capacite > 0),
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table CLASSE
+CREATE TABLE public.classe (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom TEXT NOT NULL,
+    annee_scolaire_id uuid NOT NULL REFERENCES public.annee_scolaire(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table ELEVE
+CREATE TABLE public.eleve (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+    classe_id uuid REFERENCES public.classe(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table PARENT
+CREATE TABLE public.parent (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table PROFESSEUR
+CREATE TABLE public.professeur (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table MATIERE
+CREATE TABLE public.matiere (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom TEXT NOT NULL,
+    professeur_id uuid REFERENCES public.professeur(id) ON DELETE SET NULL,
+    coefficient NUMERIC NOT NULL CHECK (coefficient > 0) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table GROUPE_ELEVE
+CREATE TABLE public.groupe_eleve (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom TEXT NOT NULL,
+    classe_id uuid REFERENCES public.classe(id) ON DELETE CASCADE,
+    annee_scolaire_id uuid NOT NULL REFERENCES public.annee_scolaire(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table GROUPE_ELEVE_MEMBRE
+CREATE TABLE public.groupe_eleve_membre (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    groupe_id uuid NOT NULL REFERENCES public.groupe_eleve(id) ON DELETE CASCADE,
+    eleve_id uuid NOT NULL REFERENCES public.eleve(id) ON DELETE CASCADE,
+    UNIQUE (groupe_id, eleve_id),
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table EMPLOI_DU_TEMPS
+CREATE TABLE public.emploi_du_temps (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    classe_id uuid NOT NULL REFERENCES public.classe(id) ON DELETE CASCADE,
+    matiere_id uuid NOT NULL REFERENCES public.matiere(id) ON DELETE CASCADE,
+    salle_id uuid REFERENCES public.salle(id) ON DELETE SET NULL,
+    jour TEXT NOT NULL CHECK (jour IN ('lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche')),
+    heure_debut TIME NOT NULL,
+    heure_fin TIME NOT NULL,
+    annee_scolaire_id uuid NOT NULL REFERENCES public.annee_scolaire(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    CONSTRAINT valid_heure CHECK (heure_debut < heure_fin)
+);
+
+-- Table COURS
+CREATE TABLE public.cours (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    emploi_du_temps_id uuid REFERENCES public.emploi_du_temps(id) ON DELETE SET NULL,
+    classe_id uuid NOT NULL REFERENCES public.classe(id) ON DELETE CASCADE,
+    matiere_id uuid NOT NULL REFERENCES public.matiere(id) ON DELETE CASCADE,
+    salle_id uuid REFERENCES public.salle(id) ON DELETE SET NULL,
+    annee_scolaire_id uuid NOT NULL REFERENCES public.annee_scolaire(id) ON DELETE CASCADE,
+    date_debut TIMESTAMP NOT NULL,
+    date_fin TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    CONSTRAINT valid_cours_dates CHECK (date_debut < date_fin)
+);
+
+-- Table DOSSIER_SCOLAIRE
+CREATE TABLE public.dossier_scolaire (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    eleve_id uuid NOT NULL REFERENCES public.eleve(id) ON DELETE CASCADE,
+    annee_scolaire_id uuid NOT NULL REFERENCES public.annee_scolaire(id) ON DELETE CASCADE,
+    commentaire TEXT,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    updated_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table PRESENCE
+CREATE TABLE public.presence (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    eleve_id uuid NOT NULL REFERENCES public.eleve(id) ON DELETE CASCADE,
+    cours_id uuid NOT NULL REFERENCES public.cours(id) ON DELETE CASCADE,
+    statut TEXT NOT NULL CHECK (statut IN ('present', 'absent', 'retard')),
+    commentaire TEXT,
+    duree_retard INTERVAL,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table EVALUATIONS_PREVUES
+CREATE TABLE public.evaluations_prevues (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    matiere_id uuid NOT NULL REFERENCES public.matiere(id) ON DELETE CASCADE,
+    cours_id uuid REFERENCES public.cours(id) ON DELETE CASCADE,
+    annee_scolaire_id uuid NOT NULL REFERENCES public.annee_scolaire(id) ON DELETE CASCADE,
+    date TIMESTAMP NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('devoir', 'examen', 'interrogation', 'projet')),
+    description TEXT,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table NOTE
+CREATE TABLE public.note (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    eleve_id uuid NOT NULL REFERENCES public.eleve(id) ON DELETE CASCADE,
+    evaluation_id uuid NOT NULL REFERENCES public.evaluations_prevues(id) ON DELETE CASCADE,
+    valeur NUMERIC NOT NULL CHECK (valeur >= 0 AND valeur <= 20),
+    commentaire TEXT,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    updated_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table BULLETIN
+CREATE TABLE public.bulletin (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    eleve_id uuid NOT NULL REFERENCES public.eleve(id) ON DELETE CASCADE,
+    annee_scolaire_id uuid NOT NULL REFERENCES public.annee_scolaire(id) ON DELETE CASCADE,
+    periode TEXT NOT NULL CHECK (periode IN ('trimestre1', 'trimestre2', 'trimestre3', 'semestre1', 'semestre2')),
+    moyenne_generale NUMERIC CHECK (moyenne_generale >= 0 AND moyenne_generale <= 20),
+    commentaire TEXT,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    updated_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table DEVOIR
+CREATE TABLE public.devoir (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    matiere_id uuid NOT NULL REFERENCES public.matiere(id) ON DELETE CASCADE,
+    classe_id uuid REFERENCES public.classe(id) ON DELETE CASCADE,
+    groupe_id uuid REFERENCES public.groupe_eleve(id) ON DELETE CASCADE,
+    titre TEXT NOT NULL,
+    description TEXT,
+    date_assignation TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    date_echeance TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    CONSTRAINT valid_devoir_dates CHECK (date_assignation <= date_echeance)
+);
+
+-- Table DEVOIR_RENDU
+CREATE TABLE public.devoir_rendu (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    devoir_id uuid NOT NULL REFERENCES public.devoir(id) ON DELETE CASCADE,
+    eleve_id uuid NOT NULL REFERENCES public.eleve(id) ON DELETE CASCADE,
+    fichier_url TEXT,
+    commentaire TEXT,
+    date_rendu TIMESTAMP DEFAULT current_timestamp,
+    note NUMERIC CHECK (note >= 0 AND note <= 20),
+    created_at TIMESTAMP DEFAULT current_timestamp,
+    UNIQUE (devoir_id, eleve_id)
+);
+
+-- Table INFRACTION_ELEVE
+CREATE TABLE public.infraction_eleve (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    eleve_id uuid NOT NULL REFERENCES public.eleve(id) ON DELETE CASCADE,
+    description TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('comportement', 'retard', 'absence', 'autre')),
+    date TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table DOCUMENT_ADMINISTRATIF
+CREATE TABLE public.document_administratif (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    eleve_id uuid REFERENCES public.eleve(id) ON DELETE CASCADE,
+    parent_id uuid REFERENCES public.parent(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('certificat', 'contrat', 'facture', 'autre')),
+    fichier_url TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table NOTIFICATION
+CREATE TABLE public.notification (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    titre TEXT NOT NULL,
+    contenu TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('note', 'presence', 'message', 'devoir', 'infraction', 'autre')),
+    lu BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table CONVERSATION
+CREATE TABLE public.conversation (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    titre TEXT,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table CONVERSATION_MEMBRE
+CREATE TABLE public.conversation_membre (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    conversation_id uuid NOT NULL REFERENCES public.conversation(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    UNIQUE (conversation_id, user_id),
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table MESSAGE
+CREATE TABLE public.message (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    conversation_id uuid NOT NULL REFERENCES public.conversation(id) ON DELETE CASCADE,
+    de_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    contenu TEXT NOT NULL,
+    date TIMESTAMP DEFAULT current_timestamp,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table PARENT_ELEVE
+CREATE TABLE public.parent_eleve (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    parent_id uuid NOT NULL REFERENCES public.parent(id) ON DELETE CASCADE,
+    eleve_id uuid NOT NULL REFERENCES public.eleve(id) ON DELETE CASCADE,
+    lien_parente TEXT NOT NULL CHECK (lien_parente IN ('pere', 'mere', 'tuteur', 'autre')),
+    UNIQUE (parent_id, eleve_id),
+    created_at TIMESTAMP DEFAULT current_timestamp
+);
+
+-- Table AUDIT_LOG
+CREATE TABLE public.audit_log (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    table_name TEXT NOT NULL,
+    record_id uuid NOT NULL,
+    operation TEXT NOT NULL CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE')),
+    user_id uuid REFERENCES public.users(id) ON DELETE SET NULL,
+    old_data JSONB,
+    new_data JSONB,
+    created_at TIMESTAMP DEFAULT current_timestamp
+);

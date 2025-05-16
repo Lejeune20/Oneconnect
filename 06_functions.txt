@@ -1,0 +1,15 @@
+-- 06_functions.sql
+-- Création des fonctions
+
+-- Fonction pour calculer la moyenne d’un élève
+CREATE FUNCTION public.calculer_moyenne(eleve_id uuid, annee_scolaire_id uuid, periode TEXT)
+RETURNS NUMERIC AS $$
+SELECT COALESCE(AVG(n.valeur * m.coefficient) / NULLIF(SUM(m.coefficient), 0), 0)
+FROM public.note n
+JOIN public.evaluations_prevues ep ON n.evaluation_id = ep.id
+JOIN public.matiere m ON ep.matiere_id = m.id
+JOIN public.bulletin b ON b.eleve_id = n.eleve_id AND b.annee_scolaire_id = ep.annee_scolaire_id
+WHERE n.eleve_id = $1
+AND ep.annee_scolaire_id = $2
+AND b.periode = $3;
+$$ LANGUAGE SQL;

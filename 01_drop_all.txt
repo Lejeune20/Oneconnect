@@ -1,0 +1,69 @@
+-- 01_drop_all.sql
+-- Supprime toutes les tables, fonctions, vues, et politiques RLS
+
+-- Désactiver RLS pour éviter les erreurs lors de la suppression
+ALTER TABLE IF EXISTS public.annee_scolaire DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.parametre_ecole DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.salle DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.classe DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.eleve DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.parent DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.professeur DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.matiere DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.groupe_eleve DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.groupe_eleve_membre DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.emploi_du_temps DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.cours DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.dossier_scolaire DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.presence DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.evaluations_prevues DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.note DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.bulletin DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.devoir DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.devoir_rendu DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.infraction_eleve DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.document_administratif DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.notification DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.conversation DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.conversation_membre DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.message DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.parent_eleve DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.audit_log DISABLE ROW LEVEL SECURITY;
+
+-- Supprimer les fonctions
+DROP FUNCTION IF EXISTS public.calculer_moyenne(uuid, uuid, TEXT);
+
+-- Supprimer les vues
+DROP VIEW IF EXISTS public.bulletin_moyenne;
+DROP VIEW IF EXISTS public.eleve_resume;
+
+-- Supprimer les tables dans l’ordre inverse des dépendances
+DROP TABLE IF EXISTS public.audit_log CASCADE;
+DROP TABLE IF EXISTS public.devoir_rendu CASCADE;
+DROP TABLE IF EXISTS public.devoir CASCADE;
+DROP TABLE IF EXISTS public.document_administratif CASCADE;
+DROP TABLE IF EXISTS public.notification CASCADE;
+DROP TABLE IF EXISTS public.bulletin CASCADE;
+DROP TABLE IF EXISTS public.groupe_eleve_membre CASCADE;
+DROP TABLE IF EXISTS public.groupe_eleve CASCADE;
+DROP TABLE IF EXISTS public.emploi_du_temps CASCADE;
+DROP TABLE IF EXISTS public.salle CASCADE;
+DROP TABLE IF EXISTS public.parametre_ecole CASCADE;
+DROP TABLE IF EXISTS public.parent_eleve CASCADE;
+DROP TABLE IF EXISTS public.message CASCADE;
+DROP TABLE IF EXISTS public.conversation_membre CASCADE;
+DROP TABLE IF EXISTS public.conversation CASCADE;
+DROP TABLE IF EXISTS public.infraction_eleve CASCADE;
+DROP TABLE IF EXISTS public.note CASCADE;
+DROP TABLE IF EXISTS public.evaluations_prevues CASCADE;
+DROP TABLE IF EXISTS public.presence CASCADE;
+DROP TABLE IF EXISTS public.dossier_scolaire CASCADE;
+DROP TABLE IF EXISTS public.cours CASCADE;
+DROP TABLE IF EXISTS public.matiere CASCADE;
+DROP TABLE IF EXISTS public.professeur CASCADE;
+DROP TABLE IF EXISTS public.parent CASCADE;
+DROP TABLE IF EXISTS public.eleve CASCADE;
+DROP TABLE IF EXISTS public.classe CASCADE;
+DROP TABLE IF EXISTS public.annee_scolaire CASCADE;
+DROP TABLE IF EXISTS public.users CASCADE;

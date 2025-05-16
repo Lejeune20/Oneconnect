@@ -1,0 +1,89 @@
+-- 04_rls.sql
+-- Activation de RLS et création des politiques RLS
+
+-- Activer RLS sur toutes les tables
+ALTER TABLE public.annee_scolaire ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parametre_ecole ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.salle ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.classe ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.eleve ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parent ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.professeur ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.matiere ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.groupe_eleve ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.groupe_eleve_membre ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.emploi_du_temps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cours ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dossier_scolaire ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.presence ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.evaluations_prevues ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.note ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bulletin ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.devoir ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.devoir_rendu ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.infraction_eleve ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.document_administratif ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversation ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversation_membre ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.message ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parent_eleve ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
+
+-- Politique RLS pour USERS (permissive temporaire pour tester)
+CREATE POLICY "Allow insert for authenticated users" ON public.users
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+-- Politique RLS pour NOTE
+CREATE POLICY note_access ON public.note
+FOR SELECT
+USING (
+    EXISTS (SELECT 1 FROM public.eleve e WHERE e.id = note.eleve_id AND e.user_id = auth.uid())
+    OR EXISTS (
+        SELECT 1
+        FROM public.parent_eleve pe
+        JOIN public.parent p ON pe.parent_id = p.id
+        WHERE pe.eleve_id = note.eleve_id
+        AND p.user_id = auth.uid()
+    )
+    OR EXISTS (
+        SELECT 1
+        FROM public.evaluations_prevues ep
+        JOIN public.matiere m ON ep.matiere_id = m.id
+        JOIN public.professeur pr ON m.professeur_id = pr.id
+        WHERE ep.id = note.evaluation_id
+        AND pr.user_id = auth.uid()
+    )
+);
+
+-- Politique RLS pour EMPLOI_DU_TEMPS
+CREATE POLICY emploi_du_temps_access ON public.emploi_du_temps
+FOR SELECT
+USING (
+    EXISTS (
+        SELECT 1
+        FROM public.eleve e
+        JOIN public.classe c ON e.classe_id = c.id
+        WHERE c.id = emploi_du_temps.classe_id
+        AND e.user_id = auth.uid()
+    )
+    OR EXISTS (
+        SELECT 1
+        FROM public.parent_eleve pe
+        JOIN public.parent p ON pe.parent_id = p.id
+        JOIN public.eleve e ON pe.eleve_id = e.id
+        JOIN public.classe c ON e.classe_id = c.id
+        WHERE c.id = emploi_du_temps.classe_id
+        AND p.user_id = auth.uid()
+    )
+    OR EXISTS (
+        SELECT 1
+        FROM public.matiere m
+        JOIN public.professeur pr ON m.professeur_id = pr.id
+        WHERE m.id = emploi_du_temps.matiere_id
+        AND pr.user_id = auth.uid()
+    )
+);

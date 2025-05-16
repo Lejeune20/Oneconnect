@@ -1,0 +1,55 @@
+-- 03_indexes.sql
+-- Création des index pour les jointures et filtres fréquents
+
+CREATE INDEX idx_annee_scolaire_dates ON public.annee_scolaire(date_debut, date_fin);
+CREATE INDEX idx_parametre_ecole_annee_scolaire_id ON public.parametre_ecole(annee_scolaire_id);
+CREATE INDEX idx_users_role ON public.users(role);
+CREATE INDEX idx_salle_capacite ON public.salle(capacite);
+CREATE INDEX idx_eleve_user_id ON public.eleve(user_id);
+CREATE INDEX idx_eleve_classe_id ON public.eleve(classe_id);
+CREATE INDEX idx_professeur_user_id ON public.professeur(user_id);
+CREATE INDEX idx_parent_user_id ON public.parent(user_id);
+CREATE INDEX idx_matiere_professeur_id ON public.matiere(professeur_id);
+CREATE INDEX idx_groupe_eleve_classe_id ON public.groupe_eleve(classe_id);
+CREATE INDEX idx_groupe_eleve_membre_groupe_id ON public.groupe_eleve_membre(groupe_id);
+CREATE INDEX idx_emploi_du_temps_classe_id ON public.emploi_du_temps(classe_id);
+CREATE INDEX idx_emploi_du_temps_matiere_id ON public.emploi_du_temps(matiere_id);
+CREATE INDEX idx_emploi_du_temps_salle_id ON public.emploi_du_temps(salle_id);
+CREATE INDEX idx_emploi_du_temps_annee_scolaire_id ON public.emploi_du_temps(annee_scolaire_id);
+CREATE INDEX idx_cours_classe_id ON public.cours(classe_id);
+CREATE INDEX idx_cours_matiere_id ON public.cours(matiere_id);
+CREATE INDEX idx_cours_salle_id ON public.cours(salle_id);
+CREATE INDEX idx_cours_annee_scolaire_id ON public.cours(annee_scolaire_id);
+CREATE INDEX idx_presence_eleve_id ON public.presence(eleve_id);
+CREATE INDEX idx_presence_cours_id ON public.presence(cours_id);
+CREATE INDEX idx_evaluations_prevues_annee_scolaire_id ON public.evaluations_prevues(annee_scolaire_id);
+CREATE INDEX idx_note_eleve_id ON public.note(eleve_id);
+CREATE INDEX idx_note_evaluation_id ON public.note(evaluation_id);
+CREATE INDEX idx_bulletin_eleve_id ON public.bulletin(eleve_id);
+CREATE INDEX idx_devoir_matiere_id ON public.devoir(matiere_id);
+CREATE INDEX idx_devoir_rendu_devoir_id ON public.devoir_rendu(devoir_id);
+CREATE INDEX idx_infraction_eleve_id ON public.infraction_eleve(eleve_id);
+CREATE INDEX idx_document_administratif_eleve_id ON public.document_administratif(eleve_id);
+CREATE INDEX idx_notification_user_id ON public.notification(user_id);
+CREATE INDEX idx_conversation_membre_conversation_id ON public.conversation_membre(conversation_id);
+CREATE INDEX idx_message_conversation_id ON public.message(conversation_id);
+CREATE INDEX idx_parent_eleve_parent_id ON public.parent_eleve(parent_id);
+CREATE INDEX idx_parent_eleve_eleve_id ON public.parent_eleve(eleve_id);
+CREATE INDEX idx_audit_log_table_name ON public.audit_log(table_name);
+
+-- Index pour éviter les conflits d’horaires
+CREATE UNIQUE INDEX idx_emploi_du_temps_no_conflict ON public.emploi_du_temps (
+    classe_id, 
+    annee_scolaire_id, 
+    jour, 
+    heure_debut, 
+    heure_fin
+) WHERE heure_debut IS NOT NULL AND heure_fin IS NOT NULL;
+
+CREATE UNIQUE INDEX idx_emploi_du_temps_salle_no_conflict ON public.emploi_du_temps (
+    salle_id, 
+    annee_scolaire_id, 
+    jour, 
+    heure_debut, 
+    heure_fin
+) WHERE salle_id IS NOT NULL AND heure_debut IS NOT NULL AND heure_fin IS NOT NULL;

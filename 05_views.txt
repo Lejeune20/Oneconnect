@@ -1,0 +1,43 @@
+-- 05_views.sql
+-- Création des vues
+
+-- Vue pour les moyennes par bulletin
+CREATE VIEW public.bulletin_moyenne AS
+SELECT 
+    b.id AS bulletin_id,
+    b.eleve_id,
+    b.periode,
+    b.annee_scolaire_id,
+    m.id AS matiere_id,
+    m.nom AS matiere_nom,
+    AVG(n.valeur * m.coefficient) / NULLIF(SUM(m.coefficient), 0) AS moyenne_matiere
+FROM public.bulletin b
+JOIN public.note n ON b.eleve_id = n.eleve_id
+JOIN public.evaluations_prevues ep ON n.evaluation_id = ep.id
+JOIN public.matiere m ON ep.matiere_id = m.id
+WHERE ep.annee_scolaire_id = b.annee_scolaire_id
+GROUP BY b.id, b.eleve_id, b.periode, b.annee_scolaire_id, m.id, m.nom;
+
+-- Vue pour résumé élève
+CREATE VIEW public.eleve_resume AS
+SELECT 
+    e.id AS eleve_id,
+    u.prenom,
+    u.nom,
+    c.nom AS classe,
+    a.nom AS annee_scolaire,
+    n.valeur AS note,
+    p.statut AS presence,
+    i.description AS infraction,
+    d.titre AS devoir,
+    b.moyenne_generale AS bulletin_moyenne
+FROM public.eleve e
+JOIN public.users u ON e.user_id = u.id
+LEFT JOIN public.classe c ON e.classe_id = c.id
+LEFT JOIN public.annee_scolaire a ON c.annee_scolaire_id = a.id
+LEFT JOIN public.note n ON e.id = n.eleve_id
+LEFT JOIN public.presence p ON e.id = p.eleve_id
+LEFT JOIN public.infraction_eleve i ON e.id = i.eleve_id
+LEFT JOIN public.devoir_rendu dr ON e.id = dr.eleve_id
+LEFT JOIN public.devoir d ON dr.devoir_id = d.id
+LEFT JOIN public.bulletin b ON e.id = b.eleve_id;
